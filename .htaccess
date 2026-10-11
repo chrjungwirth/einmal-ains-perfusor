@@ -9,6 +9,8 @@ AddType font/woff2 .woff2
 # Service Worker, Startseite und Manifest nicht lange zwischenspeichern,
 # damit neue Versionen am Handy ankommen
 <IfModule mod_headers.c>
+  # Nicht in Suchmaschinen aufnehmen (privates Werkzeug)
+  Header set X-Robots-Tag "noindex, nofollow"
   <FilesMatch "^(sw\.js|index\.html|manifest\.webmanifest)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>

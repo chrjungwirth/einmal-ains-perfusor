@@ -320,3 +320,12 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .toast .ea-btn { min-height: 40px; background: var(--paper); color: var(--ink); padding: 0 14px; font-size: 15px; }
 
 .footnote { font-size: 13px; line-height: 20px; color: var(--ink-muted); padding-top: var(--space-2); }
+
+/* Rechtliche Seiten */
+.legal { gap: var(--space-3); }
+.legal h2 + p { margin-top: -4px; }
+.legal .subhead { font-size: 18px; line-height: 26px; padding-top: var(--space-2); }
+.legal .subhead:first-child { padding-top: 0; }
+.legal p { font-size: 15px; line-height: 24px; }
+.legal-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.legal-links a { color: var(--ink-muted); }

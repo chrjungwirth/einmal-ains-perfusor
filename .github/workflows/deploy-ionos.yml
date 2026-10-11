@@ -1,0 +1,86 @@
+# Einmal AINS · Perfusor – bei jedem Push auf main per SFTP auf den IONOS-Webspace
+#
+# Benötigte Repository-Secrets (Settings → Secrets and variables → Actions):
+#   IONOS_SFTP_HOST      SFTP-Server aus dem IONOS-Kundenbereich (Hosting → SFTP & SSH)
+#   IONOS_SFTP_USER      SFTP-Benutzername
+#   IONOS_SFTP_PASSWORD  Passwort dieses SFTP-Benutzers
+#   IONOS_SFTP_PATH      Zielordner auf dem Webspace, z. B. /perfusor  (NUR für diese App – wird gespiegelt!)
+# Optional als Repository-Variable (nicht geheim):
+#   IONOS_SFTP_PORT      Standard 22
+
+name: Deploy auf IONOS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ionos
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Code holen
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rechentests
+        run: npm test
+
+      - name: Pflichtangaben prüfen
+        run: |
+          if grep -n '\[\[' js/legal.js; then
+            echo "::error file=js/legal.js::Impressum/Datenschutz enthalten noch Platzhalter [[…]] – bitte ausfüllen, bevor veröffentlicht wird."
+            exit 1
+          fi
+
+      - name: Secrets prüfen
+        env:
+          HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          USER: ${{ secrets.IONOS_SFTP_USER }}
+          PASS: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          TARGET: ${{ secrets.IONOS_SFTP_PATH }}
+        run: |
+          missing=0
+          for v in HOST USER PASS TARGET; do
+            if [ -z "${!v}" ]; then echo "::error::Secret für $v fehlt."; missing=1; fi
+          done
+          case "$TARGET" in ""|"/"|"."|"./") echo "::error::IONOS_SFTP_PATH darf nicht das Wurzelverzeichnis sein – der Zielordner wird gespiegelt."; missing=1;; esac
+          exit $missing
+
+      - name: Auslieferung zusammenstellen
+        run: |
+          mkdir dist
+          cp -r index.html manifest.webmanifest sw.js robots.txt .htaccess css js icons fonts dist/
+          find dist -type f | sort
+
+      - name: Per SFTP hochladen
+        env:
+          HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          USER: ${{ secrets.IONOS_SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          TARGET: ${{ secrets.IONOS_SFTP_PATH }}
+          PORT: ${{ vars.IONOS_SFTP_PORT || '22' }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          # Erst alles außer sw.js, dann sw.js: so lädt ein Handy beim Update nie einen neuen
+          # Service Worker, dessen Dateien noch fehlen.
+          lftp --env-password -u "$USER" -p "$PORT" "sftp://$HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 3;
+            set net:timeout 30;
+            mkdir -p -f $TARGET;
+            mirror --reverse --delete --verbose --parallel=4 --exclude-glob sw.js dist/ $TARGET;
+            put -O $TARGET dist/sw.js;
+            bye"

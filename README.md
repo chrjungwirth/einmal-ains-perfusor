@@ -57,6 +57,16 @@ Die App braucht **HTTPS** (Service Worker). Jeder statische Webserver genügt; n
 - **Eigener Webspace (Apache, z. B. IONOS):** Alle Dateien inklusive `.htaccess` per SFTP in einen Ordner laden, der über HTTPS erreichbar ist (am besten eine eigene Subdomain). Die `.htaccess` setzt den Dateityp fürs Manifest und verhindert, dass alte Versionen hängen bleiben.
 - **Homelab:** Ordner in einen Nginx-Container legen und über Nginx Proxy Manager mit Let's-Encrypt-Zertifikat ausliefern, oder nur im Tailnet per `tailscale serve`.
 
+### Automatisch auf IONOS (GitHub Action)
+
+`.github/workflows/deploy-ionos.yml` lädt bei jedem Push auf `main` per SFTP in den Zielordner. Vorher laufen die Rechentests, und der Lauf bricht ab, solange `js/legal.js` noch Platzhalter `[[…]]` enthält.
+
+Secrets unter *Settings → Secrets and variables → Actions*: `IONOS_SFTP_HOST`, `IONOS_SFTP_USER`, `IONOS_SFTP_PASSWORD`, `IONOS_SFTP_PATH` (eigener Ordner nur für die App – er wird gespiegelt, fremde Dateien darin werden gelöscht). Optional die Variable `IONOS_SFTP_PORT` (Standard 22).
+
+## Rechtliches
+
+Impressum, Datenschutz und Nutzungshinweise sind in der App unter `#/impressum`, `#/datenschutz`, `#/nutzung` erreichbar; die Angaben stehen in `js/legal.js`. Die App ist für Suchmaschinen gesperrt (`robots.txt`, `noindex`).
+
 **Update ausrollen:** Dateien ändern, in `sw.js` die `VERSION` erhöhen, neu hochladen. Die App zeigt „Neue Version verfügbar – Neu laden“.
 
 ## Installation am Handy

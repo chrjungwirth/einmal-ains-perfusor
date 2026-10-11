@@ -2,8 +2,9 @@
 import * as C from './calc.js';
 import { CATEGORIES } from './drugs.js';
 import { store } from './store.js';
+import { LEGAL } from './legal.js';
 
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -163,7 +164,8 @@ function renderList() {
       <a class="ea-btn ea-btn--secondary" href="#/neu">${I.plus}Eigenes Medikament</a>
       ${hasPatient ? `<button class="ea-btn ea-btn--ghost" type="button" id="new-patient">Neuer Patient</button>` : ''}
     </div>
-    <p class="footnote">Die Berechnung ersetzt nicht die klinische Beurteilung, die Fachinformation und den Hausstandard. Vor Anwendung Konzentration, Einheit und Laufrate am Gerät gegenprüfen.</p>`;
+    <p class="footnote">Die Berechnung ersetzt nicht die klinische Beurteilung, die Fachinformation und den Hausstandard. Vor Anwendung Konzentration, Einheit und Laufrate am Gerät gegenprüfen.</p>
+    <p class="footnote legal-links"><a href="#/impressum">Impressum</a> · <a href="#/datenschutz">Datenschutz</a> · <a href="#/nutzung">Nutzungshinweise</a></p>`;
 
   $('#dismiss')?.addEventListener('click', () => { store.dismissNotice(); renderList(); });
   $('#new-patient')?.addEventListener('click', newPatient);
@@ -677,6 +679,11 @@ function renderSettings() {
       ${store.persistent ? '' : note('warn', 'Speichern nicht möglich', 'Der Browser blockiert lokalen Speicher (z. B. privates Fenster). Änderungen gehen beim Schließen verloren.')}
       <p class="small muted">Einmal AINS · Perfusor rechnet Dosis und Laufrate für Spritzenpumpen. Das Körpergewicht wird nicht gespeichert. Die App sendet keine Daten.</p>
       <p class="small muted">Die Berechnung ersetzt nicht die klinische Beurteilung, die Fachinformation und den Hausstandard. Konzentration, Einheit und Laufrate vor Anwendung am Gerät gegenprüfen.</p>
+      <div class="btn-row">
+        <a class="ea-btn ea-btn--secondary ea-btn--sm" href="#/impressum">Impressum</a>
+        <a class="ea-btn ea-btn--secondary ea-btn--sm" href="#/datenschutz">Datenschutz</a>
+        <a class="ea-btn ea-btn--secondary ea-btn--sm" href="#/nutzung">Nutzungshinweise</a>
+      </div>
     </section>`;
 
   $$('[data-theme]', view).forEach(b => b.addEventListener('click', () => { store.setTheme(b.dataset.theme); applyTheme(); renderSettings(); }));
@@ -707,6 +714,63 @@ function renderSettings() {
   $('#install')?.addEventListener('click', async () => { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; renderSettings(); });
 }
 
+// ---------- Ansicht: Impressum, Datenschutz, Nutzungshinweise ----------
+const L = (v) => esc(v);
+function legalPage(title, body) {
+  setHeader({ back: true });
+  document.title = `${title} · Perfusor`;
+  view.innerHTML = `
+    <a class="back" href="#/einstellungen">${I.back}Einstellungen</a>
+    <h1 class="heading">${esc(title)}</h1>
+    <article class="card legal">${body}</article>
+    <p class="caption muted">Stand: ${L(LEGAL.stand)}</p>`;
+}
+
+function renderImpressum() {
+  legalPage('Impressum', `
+    <h2 class="subhead">Medieninhaber und Herausgeber</h2>
+    <p>${L(LEGAL.name)}<br>${L(LEGAL.wohnort)}</p>
+    <p>E-Mail: <span class="mono">${L(LEGAL.email)}</span></p>
+    <h2 class="subhead">Unternehmensgegenstand</h2>
+    <p>${L(LEGAL.gegenstand)}</p>
+    <h2 class="subhead">Grundlegende Richtung</h2>
+    <p>Rechenhilfsmittel und Informationen für Anästhesie und Intensivmedizin. Keine Werbung, keine Einnahmen.</p>
+    <p class="small muted">Offenlegung gemäß § 25 Mediengesetz.</p>`);
+}
+
+function renderDatenschutz() {
+  legalPage('Datenschutz', `
+    <h2 class="subhead">Verantwortlicher</h2>
+    <p>${L(LEGAL.name)}, ${L(LEGAL.wohnort)} · <span class="mono">${L(LEGAL.email)}</span></p>
+
+    <h2 class="subhead">Kurz gesagt</h2>
+    <p>Diese App verarbeitet <b>keine Patientendaten außerhalb deines Geräts</b>. Eingaben wie Körpergewicht und Dosis bleiben im Arbeitsspeicher deines Browsers und werden beim Schließen gelöscht. Es gibt keine Anmeldung, keine Cookies, kein Tracking und keine eingebundenen Dienste Dritter; Schriften und Symbole werden vom eigenen Server geladen.</p>
+
+    <h2 class="subhead">Speicherung auf deinem Gerät</h2>
+    <p>Deine Medikamentenbibliothek, Favoriten und das Farbschema werden im lokalen Speicher deines Browsers (localStorage) abgelegt, damit die App sie beim nächsten Start kennt. Ein Service Worker speichert die Programmdateien, damit die App offline läuft. Beides verlässt dein Gerät nicht, ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 165 Abs. 3 TKG 2021) und lässt sich jederzeit über die Browser-Einstellungen oder durch Entfernen der App löschen.</p>
+
+    <h2 class="subhead">Server-Logfiles beim Abruf</h2>
+    <p>Beim Laden und Aktualisieren der App übermittelt dein Browser technisch bedingt Daten an den Webserver: IP-Adresse, Datum und Uhrzeit, abgerufene Datei, übertragene Datenmenge, Browser- und Betriebssystemangaben sowie die verweisende Seite. Diese Daten werden ausschließlich zur Auslieferung der App und zur Sicherheit des Servers verarbeitet. Rechtsgrundlage ist das berechtigte Interesse an einem sicheren und funktionsfähigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Speicherdauer: ${L(LEGAL.logDauer)}. Eine Zusammenführung mit anderen Daten findet nicht statt.</p>
+
+    <h2 class="subhead">Hosting</h2>
+    <p>Die Website wird bei ${L(LEGAL.hoster)} betrieben. Mit dem Hoster besteht ein Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO).</p>
+
+    <h2 class="subhead">Deine Rechte</h2>
+    <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch (Art. 15–21 DSGVO). Wende dich dafür an die oben genannte E-Mail-Adresse. Wenn du meinst, dass die Verarbeitung gegen Datenschutzrecht verstößt, kannst du dich bei der Österreichischen Datenschutzbehörde beschweren (Barichgasse 40–42, 1030 Wien, dsb.gv.at).</p>`);
+}
+
+function renderNutzung() {
+  legalPage('Nutzungshinweise', `
+    <h2 class="subhead">Zweck</h2>
+    <p>Einmal AINS · Perfusor ist ein privat entwickeltes Rechenhilfsmittel für den persönlichen Gebrauch. Es rechnet zwischen Dosis und Laufrate einer Spritzenpumpe um.</p>
+    <h2 class="subhead">Keine Freigabe als Medizinprodukt</h2>
+    <p>Die App ist nicht als Medizinprodukt zertifiziert und trägt keine CE-Kennzeichnung. Sie ersetzt weder die klinische Beurteilung noch die Fachinformation, den Perfusor-Standard der Abteilung oder die Kontrolle am Gerät.</p>
+    <h2 class="subhead">Bibliothek</h2>
+    <p>Die mitgelieferten Konzentrationen und Bereiche sind allgemeine Ausgangswerte, kein geprüfter Standard. Jeder Eintrag ist als „ungeprüft“ markiert, bis er mit dem Hausstandard abgeglichen und bestätigt wurde. Die Bereiche dienen als Plausibilitätsnetz gegen Tipp- und Einheitenfehler und sind keine Dosierempfehlung.</p>
+    <h2 class="subhead">Verantwortung</h2>
+    <p>Die Verantwortung für Dosierung, Konzentration und Laufrate liegt bei der anwendenden Person. Ergebnisse sind vor jeder Anwendung am Gerät gegenzuprüfen. Für Schäden aus der Nutzung wird – soweit gesetzlich zulässig – keine Haftung übernommen.</p>`);
+}
+
 // ---------- Router ----------
 function render() {
   const h = location.hash || '#/';
@@ -715,6 +779,9 @@ function render() {
   else if ((m = h.match(/^#\/bearbeiten\/([a-z0-9-]+)$/))) renderEdit(m[1]);
   else if (h === '#/neu') renderEdit(null);
   else if (h === '#/einstellungen') renderSettings();
+  else if (h === '#/impressum') renderImpressum();
+  else if (h === '#/datenschutz') renderDatenschutz();
+  else if (h === '#/nutzung') renderNutzung();
   else renderList();
 }
 addEventListener('hashchange', () => { render(); scrollTo(0, 0); });

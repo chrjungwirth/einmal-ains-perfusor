@@ -1,8 +1,8 @@
 // Einmal AINS · Perfusor – Service Worker: App vollständig offline, Updates auf Nachfrage
-const VERSION = 'perfusor-1.1.0';
+const VERSION = 'perfusor-1.2.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
-  './css/app.css', './js/app.js', './js/calc.js', './js/drugs.js', './js/store.js',
+  './css/app.css', './js/app.js', './js/calc.js', './js/drugs.js', './js/store.js', './js/legal.js',
   './icons/mark.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png',
   './fonts/BricolageGrotesque-700.woff2', './fonts/BricolageGrotesque-800.woff2',
   './fonts/IBMPlexSans-400.woff2', './fonts/IBMPlexSans-500.woff2', './fonts/IBMPlexSans-600.woff2',
