@@ -1,0 +1,15 @@
+# Einmal AINS · Perfusor – Einstellungen für Apache-Webspace (z. B. IONOS)
+# Auf GitHub Pages wird diese Datei ignoriert.
+
+# Dateitypen, die ältere Apache-Konfigurationen nicht kennen
+AddType application/manifest+json .webmanifest
+AddType text/javascript .js .mjs
+AddType font/woff2 .woff2
+
+# Service Worker, Startseite und Manifest nicht lange zwischenspeichern,
+# damit neue Versionen am Handy ankommen
+<IfModule mod_headers.c>
+  <FilesMatch "^(sw\.js|index\.html|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

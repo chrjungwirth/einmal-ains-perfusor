@@ -54,6 +54,7 @@ Die App braucht **HTTPS** (Service Worker). Jeder statische Webserver genügt; n
 
 - **GitHub Pages:** Repository anlegen, Dateien pushen, unter *Settings → Pages* „Deploy from a branch“, `main`, `/ (root)`.
 - **Netlify Drop:** Ordner auf app.netlify.com/drop ziehen (mit Konto dauerhaft).
+- **Eigener Webspace (Apache, z. B. IONOS):** Alle Dateien inklusive `.htaccess` per SFTP in einen Ordner laden, der über HTTPS erreichbar ist (am besten eine eigene Subdomain). Die `.htaccess` setzt den Dateityp fürs Manifest und verhindert, dass alte Versionen hängen bleiben.
 - **Homelab:** Ordner in einen Nginx-Container legen und über Nginx Proxy Manager mit Let's-Encrypt-Zertifikat ausliefern, oder nur im Tailnet per `tailscale serve`.
 
 **Update ausrollen:** Dateien ändern, in `sw.js` die `VERSION` erhöhen, neu hochladen. Die App zeigt „Neue Version verfügbar – Neu laden“.
