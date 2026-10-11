@@ -1,5 +1,5 @@
 // Einmal AINS · Perfusor – Service Worker: App vollständig offline, Updates auf Nachfrage
-const VERSION = 'perfusor-1.0.0';
+const VERSION = 'perfusor-1.1.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './css/app.css', './js/app.js', './js/calc.js', './js/drugs.js', './js/store.js',

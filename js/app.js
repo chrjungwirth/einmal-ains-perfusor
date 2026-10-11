@@ -3,7 +3,7 @@ import * as C from './calc.js';
 import { CATEGORIES } from './drugs.js';
 import { store } from './store.js';
 
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -25,6 +25,18 @@ const I = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>',
 };
+
+// ---------- ×-Raster (wie im Einmal-AINS-Entwurf): Raster 40 px, ein einzelnes rotes + in Zelle (1|0) ----------
+let patternSeq = 0;
+function bandPattern() {
+  const id = `xgrid-${++patternSeq}`;
+  return `<svg class="band__pattern" aria-hidden="true" focusable="false">
+    <defs><pattern id="${id}" width="40" height="40" patternUnits="userSpaceOnUse"><path class="band__x" d="M15 15L25 25M25 15L15 25"/></pattern></defs>
+    <rect width="100%" height="100%" fill="url(#${id})"/>
+    <rect class="band__gap" x="40" y="0" width="40" height="40"/>
+    <path class="band__plus" d="M60 10V30M50 20H70"/>
+  </svg>`;
+}
 
 // ---------- Sitzung (nur im Arbeitsspeicher) ----------
 const session = {
@@ -126,14 +138,22 @@ function renderList() {
   const showNotice = !store.noticeDismissed || verified === 0;
   const hasPatient = session.weightText || Object.keys(session.perDrug).length;
   view.innerHTML = `
+    <section class="band band--hero" aria-labelledby="list-title">
+      ${bandPattern()}
+      <div class="band__content">
+        <span class="label band__eyebrow">Einmal AINS · ${total} Medikamente</span>
+        <h1 class="band__title" id="list-title">Perfusor-Rechner</h1>
+        <p class="band__lead">Dosis und Laufrate für Spritzenpumpen – mit Formel, Einheit und Plausibilitätsprüfung.</p>
+        <div class="search">
+          ${I.search}
+          <label class="sr-only" for="q">Medikament suchen</label>
+          <input id="q" type="search" placeholder="Medikament suchen" autocomplete="off" enterkeyhint="search" value="${esc(session.query)}">
+        </div>
+      </div>
+    </section>
     ${showNotice ? note('warn', 'Startliste ist ungeprüft',
       `Die Konzentrationen sind allgemeine Vorschläge. Gleiche jedes Medikament mit eurem Perfusor-Standard ab und bestätige es, bevor du es am Patienten verwendest. Bisher bestätigt: <b>${verified} von ${total}</b>.`,
       store.noticeDismissed ? '' : `<div class="btn-row"><button class="ea-btn ea-btn--secondary ea-btn--sm" type="button" id="dismiss">Verstanden</button></div>`) : ''}
-    <div class="search">
-      ${I.search}
-      <label class="sr-only" for="q">Medikament suchen</label>
-      <input id="q" type="search" placeholder="Medikament suchen" autocomplete="off" enterkeyhint="search" value="${esc(session.query)}">
-    </div>
     <div class="filters" role="group" aria-label="Filter">
       ${[['alle', 'Alle'], ['fav', 'Favoriten'], ...CATEGORIES.map(c => [c.id, c.name])]
         .map(([id, name]) => `<button class="filter" type="button" data-filter="${id}" aria-pressed="${session.filter === id}">${esc(name)}</button>`).join('')}
@@ -213,23 +233,20 @@ function renderCalc(id) {
 
   view.innerHTML = `
     <a class="back" href="#/">${I.back}Alle Medikamente</a>
-    <div class="drug-head">
-      <span class="label">${esc(catName(d.cat))}</span>
-      <h1 class="heading">${esc(d.name)}</h1>
-      <div class="drug-head__row">
-        ${statusChip(d)}
-        <a class="ea-btn ea-btn--ghost ea-btn--sm" href="#/bearbeiten/${d.id}">${I.edit}${d.verified ? 'Bearbeiten' : 'Prüfen &amp; bestätigen'}</a>
-      </div>
-    </div>
 
-    <form class="card card--raised" id="calc" novalidate autocomplete="off">
-      <div class="conc${overridden ? ' conc--changed' : ''}" id="conc">
-        <div>
-          <div class="conc__val" id="conc-val"></div>
-          <div class="conc__sub" id="conc-sub"></div>
-        </div>
-        <button class="ea-btn ea-btn--ghost ea-btn--sm" type="button" id="conc-toggle" aria-expanded="${overridden}">${overridden ? 'Standard' : 'Ändern'}</button>
+    <div class="band band--calc">
+      ${bandPattern()}
+    <form class="card card--raised calc-card" id="calc" novalidate autocomplete="off">
+      <div class="card__head">
+        <span class="label">${esc(catName(d.cat))}</span>
+        <span class="tag tag--${d.verified ? 'ok' : 'warn'}">${d.verified ? 'Bestätigt' : 'Ungeprüft'}</span>
       </div>
+      <h1 class="heading">${esc(d.name)}</h1>
+
+      <button class="conc${overridden ? ' conc--changed' : ''}" type="button" id="conc-toggle" aria-expanded="${overridden}" aria-controls="conc-edit">
+        <span class="conc__key">Konzentration<span class="conc__action">${overridden ? 'Standard wiederherstellen' : 'Ändern'}</span></span>
+        <span class="conc__right"><span class="conc__val" id="conc-val"></span><span class="conc__sub" id="conc-sub"></span></span>
+      </button>
       <div class="grid-2" id="conc-edit" ${overridden ? '' : 'hidden'}>
         <div class="ea-field">
           <label class="ea-field__label" for="c-amount">Wirkstoff</label>
@@ -246,10 +263,11 @@ function renderCalc(id) {
         <button type="button" data-mode="rate" aria-pressed="${session.mode === 'rate'}">ml/h → Dosis</button>
       </div>
 
+      <div class="fields">
       <div class="ea-field" id="weight-field">
         <label class="ea-field__label" for="w">Körpergewicht</label>
         <div class="ea-field__control"><input class="ea-field__input" id="w" inputmode="decimal" placeholder="z. B. 75" value="${esc(session.weightText)}"><span class="ea-field__unit">kg</span></div>
-        <span class="ea-field__hint" id="w-hint">Gilt für alle Medikamente, bis du „Neuer Patient“ wählst oder die App schließt.</span>
+        <span class="ea-field__hint" id="w-hint" hidden></span>
       </div>
 
       <div class="ea-field" id="dose-field" ${session.mode === 'dose' ? '' : 'hidden'}>
@@ -271,6 +289,7 @@ function renderCalc(id) {
         <label class="ea-field__label" for="outunit">Dosis anzeigen in</label>
         <select class="select mono" id="outunit">${units.map(u => `<option value="${u}" ${u === p.unit ? 'selected' : ''}>${esc(C.displayUnit(u))}</option>`).join('')}</select>
       </div>
+      </div>
 
       <div class="ea-result" id="result" role="status" aria-live="polite" aria-atomic="true">
         <span class="label" id="res-label"></span>
@@ -282,14 +301,22 @@ function renderCalc(id) {
 
       <div class="ea-rows" id="details"></div>
       <p class="caption muted" id="formula"></p>
+    </form>
+    </div>
 
-      <details class="more" id="table-box">
+    <div class="btn-row">
+      <a class="ea-btn ea-btn--${d.verified ? 'secondary' : 'primary'} ea-btn--sm" href="#/bearbeiten/${d.id}">${I.edit}${d.verified ? 'Bearbeiten' : 'Prüfen &amp; bestätigen'}</a>
+      <button class="ea-btn ea-btn--ghost ea-btn--sm" type="button" id="new-patient">Neuer Patient</button>
+    </div>
+    <p class="caption muted">Das Körpergewicht gilt für alle Medikamente, bis du „Neuer Patient“ wählst oder die App schließt.</p>
+    ${d.note ? note('info', 'Hinweis', esc(d.note)) : ''}
+
+    <section class="card">
+      <details class="more more--flush" id="table-box">
         <summary>Dosistabelle</summary>
         <div id="table"></div>
       </details>
-    </form>
-    ${d.note ? note('info', 'Hinweis', esc(d.note)) : ''}
-    <div class="btn-row"><button class="ea-btn ea-btn--ghost" type="button" id="new-patient">Neuer Patient</button></div>
+    </section>
     <p class="footnote">Ergebnis vor Anwendung am Perfusor gegenprüfen. Die Berechnung ersetzt nicht die klinische Beurteilung, die Fachinformation und den Hausstandard.</p>`;
 
   const form = $('#calc');
@@ -371,10 +398,10 @@ function updateCalc(d) {
   $('#conc-val').textContent = Number.isFinite(amount) && Number.isFinite(volume) ? `${C.formatDose(amount)} ${d.unit} / ${C.formatDose(volume)} ml` : '–';
   const changed = p.amountText !== null && (amount !== d.amount || volume !== d.volume);
   $('#conc-sub').textContent = `= ${concText(amount, d.unit, volume)}${changed ? ' · abweichend vom Standard' : ''}`;
-  $('#conc').classList.toggle('conc--changed', changed);
+  $('#conc-toggle').classList.toggle('conc--changed', changed);
 
   // Feldfehler
-  fieldState('#weight-field', r.weightR.error, '#w-hint', 'Gilt für alle Medikamente, bis du „Neuer Patient“ wählst oder die App schließt.');
+  fieldState('#weight-field', r.weightR.error, '#w-hint', '');
   $('#weight-field').hidden = !needW && !(d.range && C.needsWeight(d.dose));
   fieldState('#dose-field', r.doseR.error, '#dose-hint', d.range ? `Hinterlegter Bereich: ${C.formatDose(d.range[0])}–${C.formatDose(d.range[1])} ${C.displayUnit(d.dose)}` : '');
   fieldState('#rate-field', r.rateR.error, '#rate-hint', '');
